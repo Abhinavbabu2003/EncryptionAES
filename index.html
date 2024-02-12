@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AES Encryption</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+<title>AES Encryption and Decryption</title>
 <style>
+    /* Styles for smooth animations */
     body {
         font-family: Arial, sans-serif;
         background-color: #121212; /* Dark background */
@@ -17,6 +17,8 @@
         text-align: center;
         margin-top: 20px;
         color: #bb86fc; /* Purple text */
+        cursor: pointer; /* Make the header clickable */
+        user-select: none; /* Prevent text selection */
     }
     .container {
         max-width: 600px;
@@ -25,12 +27,16 @@
         border-radius: 5px;
         padding: 20px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); /* Slightly visible shadow */
+        transition: transform 0.3s ease; /* Add smooth transition */
+    }
+    .container:hover {
+        transform: scale(1.05); /* Scale up on hover */
     }
     label {
         font-weight: bold;
         color: #ffffff; /* Light text */
     }
-    textarea, input[type="password"] {
+    textarea, input[type="password"], input[type="text"] {
         width: 100%;
         padding: 10px;
         margin-bottom: 15px;
@@ -63,71 +69,91 @@
         max-width: 100%; /* Limit the width to prevent overflowing */
         color: #ffffff; /* Light text */
     }
-    .copy-button, .download-button {
-        margin-top: 10px;
-        margin-right: 10px;
+    /* Easter egg message */
+    #easter-egg {
+        display: none;
+        margin-top: 20px;
+        padding: 15px;
+        border: 1px solid #ffcc00; /* Yellow border */
+        border-radius: 5px;
+        background-color: #333333; /* Darker text area background */
+        max-width: 100%; /* Limit the width to prevent overflowing */
+        color: #ffffff; /* Light text */
     }
 </style>
 </head>
 <body>
-<h1>AES Encryption</h1>
 <div class="container">
-    <div>
-        <label for="message">Message:</label><br>
-        <textarea id="message" rows="4" cols="50" placeholder="Enter your message..."></textarea><br>
-        <label for="password">Password:</label><br>
-        <input type="password" id="password" placeholder="Enter your password..."><br>
-        <button onclick="encryptMessage()">Encrypt</button>
-        <button onclick="decryptMessage()">Decrypt</button>
-    </div>
-    <div id="result"></div>
-    <button class="copy-button" id="copyButton" onclick="copyText()">Copy</button>
+    <h1 onclick="redirect()">AES Encryption and Decryption</h1>
+    <label for="plaintext">Enter your message:</label><br>
+    <textarea id="plaintext" rows="4" cols="50" placeholder="Enter your message..." oninput="checkEasterEgg()"></textarea><br>
+    <label for="key">Enter encryption/decryption key:</label>
+    <input type="text" id="key" placeholder="Enter encryption/decryption key..." oninput="checkEasterEgg()"><br>
+    <button onclick="encrypt()">Encrypt</button>
+    <button onclick="decrypt()">Decrypt</button><br>
+    <label for="result">Result:</label><br>
+    <textarea id="result" class="result" rows="4" cols="50" readonly></textarea>
+    <div id="easter-egg">Congratulations! You found the Easter egg!</div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script>
+// Counter for header clicks
+var headerClickCount = 0;
 
+// Function to perform AES encryption
+function encrypt() {
+    var plaintext = document.getElementById("plaintext").value;
+    var key = document.getElementById("key").value;
 
-function encryptMessage() {
-    var message = document.getElementById("message").value;
-    var password = document.getElementById("password").value;
+    // Encrypt using AES with CryptoJS
+    var ciphertext = CryptoJS.AES.encrypt(plaintext, key).toString();
 
-    var encryptedMessage = CryptoJS.AES.encrypt(message, password).toString();
-    document.getElementById("result").innerHTML = "<div class='encrypted-message'><strong>Encrypted Message:</strong><br>" + encryptedMessage + "</div>";
-
-    // Store the encrypted message in local storage
-    localStorage.setItem("encryptedMessage", encryptedMessage);
+    // Update result textarea with the ciphertext with smooth animation
+    animateTextChange("result", ciphertext);
 }
 
-function decryptMessage() {
-    var encryptedMessage = localStorage.getItem("encryptedMessage");
-    if (!encryptedMessage) {
-        alert("No encrypted message found. Please encrypt a message first.");
-        return;
+// Function to perform AES decryption
+function decrypt() {
+    var ciphertext = document.getElementById("result").value;
+    var key = document.getElementById("key").value;
+
+    // Decrypt using AES with CryptoJS
+    var bytes  = CryptoJS.AES.decrypt(ciphertext, key);
+    var plaintext = bytes.toString(CryptoJS.enc.Utf8);
+
+    // Update result textarea with the decrypted text with smooth animation
+    animateTextChange("result", plaintext);
+}
+
+// Function to animate text change
+function animateTextChange(elementId, newText) {
+    var element = document.getElementById(elementId);
+    element.style.opacity = 0;
+    setTimeout(function() {
+        element.value = newText;
+        element.style.opacity = 1;
+    }, 300); // Adjust duration as needed
+}
+
+// Function to check for the Easter egg
+function checkEasterEgg() {
+    var message = document.getElementById("plaintext").value.toLowerCase();
+    var key = document.getElementById("key").value.toLowerCase();
+    if (message.trim() === "encryption" && key.trim().length > 0) {
+        document.getElementById("easter-egg").style.display = "block";
+    } else {
+        document.getElementById("easter-egg").style.display = "none";
     }
-    var password = document.getElementById("password").value;
-
-    var decryptedBytes = CryptoJS.AES.decrypt(encryptedMessage, password);
-    var decryptedMessage = decryptedBytes.toString(CryptoJS.enc.Utf8);
-
-    // Replace newline characters with <br> tags
-    decryptedMessage = decryptedMessage.replace(/\n/g, "<br>");
-
-    document.getElementById("result").innerHTML += "<div class='decrypted-message'><br><strong>Decrypted Message:</strong><br>" + decryptedMessage + "</div>";
-
-    
 }
 
-function copyText() {
-    var resultText = document.getElementById("result");
-    var range = document.createRange();
-    range.selectNode(resultText);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-    document.execCommand("copy");
-    window.getSelection().removeAllRanges();
+// Function to redirect to Google
+function redirect() {
+    headerClickCount++;
+    if (headerClickCount > 5) {
+        window.location.href = "https://www.google.com";
+    }
 }
-
-
 </script>
 </body>
 </html>
